@@ -1,0 +1,167 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "News and information articles for the school website.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string", "enum": ["berita", "pengumuman", "informasi"] },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "category", "authorId", "createdAt", "updatedAt"]
+    },
+    "GalleryItem": {
+      "title": "Gallery Item",
+      "description": "Images for the school gallery.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "imageUrl", "createdAt"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "Brief profile of school teachers.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "bio": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["name", "role", "order"]
+    },
+    "Slide": {
+      "title": "Slide",
+      "description": "Hero images and text for the homepage slider.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "order": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "subtitle", "imageUrl", "order", "createdAt"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "General application settings for header and footer.",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "facebookUrl": { "type": "string" },
+        "instagramUrl": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "whatsappNumber": { "type": "string" }
+      },
+      "required": ["schoolName", "tagline"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Messages from the contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "createdAt"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "Student achievements records.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "competition": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "award": { "type": "string" },
+        "level": { "type": "string" },
+        "evidence": { "type": "string" },
+        "order": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "competition", "date", "award", "level", "order", "createdAt"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Video gallery items (YouTube).",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "youtubeId": { "type": "string" },
+        "description": { "type": "string" },
+        "order": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "youtubeId", "order", "createdAt"]
+    },
+    "Sarpras": {
+      "title": "Sarana dan Prasarana",
+      "description": "School facilities and infrastructure.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "order": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "imageUrl", "order", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Articles / News"
+    },
+    "/gallery/{itemId}": {
+      "schema": "GalleryItem",
+      "description": "Gallery items"
+    },
+    "/teachers/{teacherId}": {
+      "schema": "Teacher",
+      "description": "Teacher profiles"
+    },
+    "/slides/{slideId}": {
+      "schema": "Slide",
+      "description": "Homepage slider images"
+    },
+    "/settings/{settingId}": {
+      "schema": "Setting",
+      "description": "General app settings"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Contact form submissions"
+    },
+    "/achievements/{achievementId}": {
+      "schema": "Achievement",
+      "description": "Student achievement records"
+    },
+    "/videos/{videoId}": {
+      "schema": "Video",
+      "description": "Video gallery items"
+    },
+    "/sarpras/{sarprasId}": {
+      "schema": "Sarpras",
+      "description": "School facilities"
+    }
+  }
+}

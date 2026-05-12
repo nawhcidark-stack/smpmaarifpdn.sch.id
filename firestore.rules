@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email in ['nawhci.dark@gmail.com', 'smpmaarifpandaan@gmail.com'];
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Articles Rules
+    match /articles/{articleId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(articleId) && isValidArticle(request.resource.data);
+      allow update: if isAdmin() && isValidArticle(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    function isValidArticle(data) {
+      return data.title is string && data.title.size() <= 200
+          && data.content is string && data.content.size() <= 50000
+          && data.imageUrl is string
+          && data.category in ['berita', 'pengumuman', 'informasi']
+          && (data.authorId == request.auth.uid || isAdmin())
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+    }
+
+    // Gallery Rules
+    match /gallery/{itemId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(itemId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Teachers Rules
+    match /teachers/{teacherId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(teacherId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Slides Rules
+    match /slides/{slideId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(slideId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Settings Rules
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Messages Rules
+    match /messages/{messageId} {
+      allow create: if true; // Public can send messages
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Achievements Rules
+    match /achievements/{achievementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Videos Rules
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Sarpras Rules
+    match /sarpras/{sarprasId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
