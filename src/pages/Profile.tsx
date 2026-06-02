@@ -1,17 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Award, Target, Eye, Users } from 'lucide-react';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function Profile() {
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [vision, setVision] = useState('Terwujudnya lembaga pendidikan yang unggul dalam prestasi, luhur dalam budi pekerti, dan teguh dalam iman dan taqwa berhaluan Ahlussunnah Wal Jama\'ah.');
+  const [mission, setMission] = useState<string[]>([
+    "Menyelenggarakan pendidikan yang berkualitas dan terjangkau bagi masyarakat.",
+    "Menumbuhkembangkan semangat keunggulan secara intensif kepada seluruh warga sekolah.",
+    "Membentuk karakter siswa yang disiplin, jujur, dan bertanggung jawab.",
+    "Menerapkan nilai-nilai keislaman ala Ahlussunnah Wal Jama'ah An-Nahdliyah dalam kehidupan sehari-hari."
+  ]);
+  const [tagline, setTagline] = useState('"Mencetak generasi cerdas, berprestasi, dan berakhlak mulia berlandaskan nilai-nilai Ahlussunnah Wal Jama\'ah."');
+  const [historyTitle, setHistoryTitle] = useState('Sejarah Singkat');
+  const [historyContent, setHistoryContent] = useState('SMP Maarif NU Pandaan didirikan sebagai bentuk pengabdian kepada masyarakat untuk menyediakan pendidikan menengah terpadu antara kurikulum nasional dan nilai-nilai agama.\n\nSejak berdiri, kami terus berkomitmen meningkatkan kualitas fasilitas, tenaga pendidik, dan sistem pembelajaran guna menghadapi tantangan zaman tanpa meninggalkan akar tradisi keislaman Nusantara.');
+  const [historyImageUrl, setHistoryImageUrl] = useState('https://images.unsplash.com/photo-1541339907198-e08759dfc02c?q=80&w=2070&auto=format&fit=crop');
 
   useEffect(() => {
+    // Fetch Teachers
     const q = query(collection(db, 'teachers'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubTeachers = onSnapshot(q, (snapshot) => {
       setTeachers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-    return () => unsubscribe();
+
+    // Fetch Config
+    const fetchConfig = async () => {
+      try {
+        const docRef = doc(db, 'config', 'school_profile');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.vision) setVision(data.vision);
+          if (data.mission && data.mission.length > 0) setMission(data.mission);
+          if (data.tagline) setTagline(data.tagline);
+          if (data.historyTitle) setHistoryTitle(data.historyTitle);
+          if (data.historyContent) setHistoryContent(data.historyContent);
+          if (data.historyImageUrl) setHistoryImageUrl(data.historyImageUrl);
+        }
+      } catch (error) {
+        console.error("Error fetching vision/mission:", error);
+      }
+    };
+
+    fetchConfig();
+
+    return () => unsubTeachers();
   }, []);
 
   return (
@@ -22,7 +56,7 @@ export default function Profile() {
           <span className="bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded tracking-widest mb-4 inline-block">Tentang Kami</span>
           <h1 className="text-4xl md:text-5xl font-black text-slate-800 mb-6 leading-tight">Profil Sekolah</h1>
           <p className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto italic">
-            "Mencetak generasi cerdas, berprestasi, dan berakhlak mulia berlandaskan nilai-nilai Ahlussunnah Wal Jama'ah."
+            {tagline}
           </p>
         </div>
       </section>
@@ -33,18 +67,13 @@ export default function Profile() {
           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-6">
             <h2 className="section-title">Visi</h2>
             <p className="text-slate-600 leading-relaxed font-medium">
-              Terwujudnya lembaga pendidikan yang unggul dalam prestasi, luhur dalam budi pekerti, dan teguh dalam iman dan taqwa berhaluan Ahlussunnah Wal Jama'ah.
+              {vision}
             </p>
           </div>
           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-6">
             <h2 className="section-title">Misi</h2>
             <ul className="space-y-4 text-slate-600 font-medium">
-              {[
-                "Menyelenggarakan pendidikan yang berkualitas dan terjangkau bagi masyarakat.",
-                "Menumbuhkembangkan semangat keunggulan secara intensif kepada seluruh warga sekolah.",
-                "Membentuk karakter siswa yang disiplin, jujur, dan bertanggung jawab.",
-                "Menerapkan nilai-nilai keislaman ala Ahlussunnah Wal Jama'ah An-Nahdliyah dalam kehidupan sehari-hari."
-              ].map((item, idx) => (
+              {mission.map((item, idx) => (
                 <li key={idx} className="flex gap-4">
                   <span className="w-6 h-6 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">{idx + 1}</span>
                   <span>{item}</span>
@@ -59,21 +88,16 @@ export default function Profile() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-700 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl opacity-50" />
           <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-black mb-6">Sejarah Singkat</h2>
-              <div className="space-y-4 text-emerald-50/80 leading-relaxed font-medium">
-                <p>
-                  SMP Maarif NU Pandaan didirikan sebagai bentuk pengabdian kepada masyarakat untuk menyediakan pendidikan menengah terpadu antara kurikulum nasional dan nilai-nilai agama.
-                </p>
-                <p>
-                  Sejak berdiri, kami terus berkomitmen meningkatkan kualitas fasilitas, tenaga pendidik, dan sistem pembelajaran guna menghadapi tantangan zaman tanpa meninggalkan akar tradisi keislaman Nusantara.
-                </p>
+              <h2 className="text-3xl font-black mb-6">{historyTitle}</h2>
+              <div className="space-y-4 text-emerald-50/80 leading-relaxed font-medium whitespace-pre-line">
+                {historyContent}
               </div>
             </div>
-            <div className="aspect-video bg-white/10 rounded-2xl overflow-hidden border border-white/20 backdrop-blur-sm">
+            <div className="aspect-video bg-white/10 rounded-2xl overflow-hidden border border-white/20 backdrop-blur-sm shadow-xl">
               <img 
-                src="https://images.unsplash.com/photo-1541339907198-e08759dfc02c?q=80&w=2070&auto=format&fit=crop" 
-                alt="School History" 
-                className="w-full h-full object-cover grayscale opacity-80"
+                src={historyImageUrl} 
+                alt={historyTitle} 
+                className="w-full h-full object-cover grayscale opacity-80 hover:opacity-100 transition-opacity duration-700"
               />
             </div>
           </div>

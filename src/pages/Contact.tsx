@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -13,10 +13,12 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       await addDoc(collection(db, 'messages'), {
         ...formData,
@@ -26,6 +28,8 @@ export default function Contact() {
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
       console.error("Error sending message:", error);
+      setErrorMessage("Gagal mengirim pesan. Silakan coba lagi nanti.");
+      handleFirestoreError(error, OperationType.WRITE, 'messages');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,8 +177,16 @@ export default function Contact() {
                     ></textarea>
                   </div>
 
+                  {errorMessage && (
+                    <div className="bg-rose-50 border border-rose-100 text-rose-700 px-6 py-4 rounded-2xl flex items-center gap-3 animate-shake">
+                      <AlertCircle size={20} />
+                      <p className="text-sm font-bold">{errorMessage}</p>
+                    </div>
+                  )}
+
                   <div className="pt-2">
                     <button 
+                      type="submit"
                       disabled={isSubmitting}
                       className="group relative inline-flex items-center gap-3 bg-emerald-700 text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/10 disabled:bg-slate-300 disabled:shadow-none active:scale-95 overflow-hidden"
                     >

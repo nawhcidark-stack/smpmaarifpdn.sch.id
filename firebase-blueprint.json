@@ -124,9 +124,40 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "description", "imageUrl", "order", "createdAt"]
+    },
+    "SchoolConfig": {
+      "title": "School Configuration",
+      "description": "Global school settings and content.",
+      "type": "object",
+      "properties": {
+        "vision": { "type": "string" },
+        "mission": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tagline": { "type": "string" },
+        "historyTitle": { "type": "string" },
+        "historyContent": { "type": "string" },
+        "historyImageUrl": { "type": "string" },
+        "ppdbTitle": { "type": "string" },
+        "ppdbContent": { "type": "string" },
+        "ppdbImageUrl": { "type": "string" },
+        "ppdbLink": { "type": "string" },
+        "ppdbActive": { "type": "boolean" },
+        "principalName": { "type": "string" },
+        "principalNip": { "type": "string" },
+        "principalTitle": { "type": "string" },
+        "principalMessage": { "type": "string" },
+        "principalImageUrl": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
+    "/config/{configId}": {
+      "schema": "SchoolConfig",
+      "description": "Global application configuration"
+    },
     "/articles/{articleId}": {
       "schema": "Article",
       "description": "Articles / News"

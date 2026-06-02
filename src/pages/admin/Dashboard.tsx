@@ -13,7 +13,8 @@ import {
   Settings,
   Trophy,
   Video,
-  Package
+  Package,
+  FileText
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
@@ -64,7 +65,8 @@ export default function Dashboard() {
     { label: 'Galeri Foto', icon: ImageIcon, count: stats.gallery, path: '/admin/gallery', color: 'bg-blue-50 text-blue-700' },
     { label: 'Galeri Video', icon: Video, count: stats.videos, path: '/admin/videos', color: 'bg-rose-50 text-rose-700' },
     { label: 'Slide Beranda', icon: Layout, count: stats.slides, path: '/admin/slides', color: 'bg-amber-50 text-amber-700' },
-    { label: 'Data Prestasi', icon: Trophy, count: stats.achievements, path: '/admin/achievements', color: 'bg-yellow-50 text-yellow-700' },
+    { label: 'Penghargaan', icon: Trophy, count: stats.achievements, path: '/admin/achievements', color: 'bg-yellow-50 text-yellow-700' },
+    { label: 'Profil Sekolah', icon: FileText, count: null, path: '/admin/profile', color: 'bg-emerald-50 text-emerald-700' },
     { label: 'Profil Guru', icon: Users, count: stats.teachers, path: '/admin/teachers', color: 'bg-slate-50 text-slate-700' },
     { label: 'Sarpras', icon: Package, count: stats.sarpras, path: '/admin/sarpras', color: 'bg-cyan-50 text-cyan-700' },
     { label: 'Pesan Masuk', icon: Mail, count: stats.messages, path: '/admin/messages', color: 'bg-indigo-50 text-indigo-700' },

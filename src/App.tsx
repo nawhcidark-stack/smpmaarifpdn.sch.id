@@ -28,6 +28,7 @@ import AdminMessages from './pages/admin/Messages';
 import AdminSlides from './pages/admin/Slides';
 import AdminSettings from './pages/admin/Settings';
 import AdminAchievements from './pages/admin/Achievements';
+import AdminSchoolProfile from './pages/admin/SchoolProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 interface AuthContextType {
@@ -87,6 +88,7 @@ export default function App() {
               <Route path="/admin/slides" element={<ProtectedRoute><AdminSlides /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="/admin/achievements" element={<ProtectedRoute><AdminAchievements /></ProtectedRoute>} />
+              <Route path="/admin/profile" element={<ProtectedRoute><AdminSchoolProfile /></ProtectedRoute>} />
             </Routes>
           </main>
 

@@ -24,9 +24,17 @@ export default function Login() {
       } else {
         navigate('/admin');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Terjadi kesalahan saat login.");
+      if (err.code === 'auth/unauthorized-domain') {
+        setError("Domain ini belum diizinkan di Firebase Console. Harap tambahkan domain hosting Anda ke 'Authorized Domains' di Authentication > Settings > Authorized domains di Firebase Console.");
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError("Login dibatalkan (popup ditutup).");
+      } else if (err.code === 'auth/cancelled-by-user') {
+        setError("Login dibatalkan.");
+      } else {
+        setError("Terjadi kesalahan saat login: " + (err.message || "Unknown error"));
+      }
     }
   };
 
