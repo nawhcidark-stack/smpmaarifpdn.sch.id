@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
@@ -12,7 +12,8 @@ import {
   History,
   Image as ImageIcon,
   Quote,
-  User
+  User,
+  Upload
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -39,6 +40,58 @@ export default function AdminSchoolProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // File Input Refs
+  const fileInputPpdbRef = useRef<HTMLInputElement>(null);
+  const fileInputHistoryRef = useRef<HTMLInputElement>(null);
+  const fileInputPrincipalRef = useRef<HTMLInputElement>(null);
+
+  // Resize and compress files to base64
+  const processImageFile = (file: File, callback: (base64: string) => void) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'File harus berupa gambar (PNG, JPG, WEBP).' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          callback(compressedBase64);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      setMessage({ type: 'error', text: 'Gagal membaca file gambar.' });
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -267,18 +320,81 @@ export default function AdminSchoolProfile() {
                          placeholder="Tuliskan sejarah sekolah di sini..." 
                        />
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">URL Foto Sejarah</label>
-                       <div className="relative">
-                          <input 
-                            type="text" 
-                            className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500" 
-                            value={historyImageUrl} 
-                            onChange={(e) => setHistoryImageUrl(e.target.value)}
-                            placeholder="https://images.unsplash.com/..." 
-                          />
-                          <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-                       </div>
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Foto Sejarah Sekolah</label>
+                       
+                       {historyImageUrl ? (
+                          <div className="relative group border border-neutral-200 rounded-[2rem] p-4 bg-neutral-50/50 flex flex-col items-center">
+                            <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-100 flex items-center justify-center border border-neutral-200 shadow-inner">
+                              <img 
+                                src={historyImageUrl} 
+                                alt="Foto Sejarah" 
+                                className="h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex gap-3 mt-4 w-full justify-center">
+                              <button
+                                type="button"
+                                onClick={() => fileInputHistoryRef.current?.click()}
+                                className="flex items-center gap-2 text-xs font-bold bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-2.5 rounded-xl transition-all"
+                              >
+                                <Upload size={14} /> Ganti Gambar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setHistoryImageUrl('')}
+                                className="flex items-center gap-2 text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl transition-all"
+                              >
+                                <Trash2 size={14} /> Hapus
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => fileInputHistoryRef.current?.click()}
+                            className="border-2 border-dashed border-neutral-200 rounded-[2rem] p-8 text-center hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer group"
+                          >
+                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                              <Upload size={24} className="text-blue-600" />
+                            </div>
+                            <p className="font-bold text-neutral-700 text-sm">Upload Foto Sejarah</p>
+                            <p className="text-[10px] text-neutral-400 mt-1">Klik untuk memilih file gambar dari komputer Anda</p>
+                          </div>
+                        )}
+                        <input 
+                          ref={fileInputHistoryRef}
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              processImageFile(file, (base64) => setHistoryImageUrl(base64));
+                            }
+                          }}
+                        />
+
+                        {/* Collapsible/Optional text input for Image URL */}
+                        <div className="pt-2">
+                          <details className="group">
+                            <summary className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest cursor-pointer list-none select-none flex items-center gap-1 hover:text-neutral-600">
+                              <span className="transition-transform group-open:rotate-90">▶</span>
+                              Atau gunakan URL Link Gambar
+                            </summary>
+                            <div className="pt-2">
+                              <div className="relative">
+                                 <input 
+                                   type="text" 
+                                   className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500 text-sm" 
+                                   value={historyImageUrl} 
+                                   onChange={(e) => setHistoryImageUrl(e.target.value)}
+                                   placeholder="https://images.unsplash.com/..." 
+                                 />
+                                 <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                              </div>
+                            </div>
+                          </details>
+                        </div>
                     </div>
                   </div>
                </section>
@@ -324,32 +440,98 @@ export default function AdminSchoolProfile() {
                          placeholder="Tuliskan detail pendaftaran, syarat, dsb..." 
                        />
                     </div>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">URL Gambar Brosur</label>
-                         <div className="relative">
-                            <input 
-                              type="text" 
-                              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500" 
-                              value={ppdbImageUrl} 
-                              onChange={(e) => setPpdbImageUrl(e.target.value)}
-                              placeholder="https://..." 
-                            />
-                            <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-                         </div>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1 font-bold">Gambar Brosur PPDB / SPMB</label>
+                        
+                        {ppdbImageUrl ? (
+                          <div className="relative group border border-neutral-200 rounded-[2rem] p-4 bg-neutral-50/50 flex flex-col items-center">
+                            <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 flex items-center justify-center border border-neutral-200 shadow-inner">
+                              <img 
+                                src={ppdbImageUrl} 
+                                alt="Brosur PPDB" 
+                                className="h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex gap-3 mt-4 w-full justify-center">
+                              <button
+                                type="button"
+                                onClick={() => fileInputPpdbRef.current?.click()}
+                                className="flex items-center gap-2 text-xs font-bold bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-2.5 rounded-xl transition-all"
+                              >
+                                <Upload size={14} /> Ganti Gambar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPpdbImageUrl('')}
+                                className="flex items-center gap-2 text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl transition-all"
+                              >
+                                <Trash2 size={14} /> Hapus
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => fileInputPpdbRef.current?.click()}
+                            className="border-2 border-dashed border-neutral-200 rounded-[2rem] p-8 text-center hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer group"
+                          >
+                            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                              <Upload size={24} className="text-rose-600" />
+                            </div>
+                            <p className="font-bold text-neutral-700 text-sm">Upload Gambar Brosur</p>
+                            <p className="text-[10px] text-neutral-400 mt-1">Klik untuk memilih file gambar dari komputer Anda</p>
+                          </div>
+                        )}
+                        <input 
+                          ref={fileInputPpdbRef}
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              processImageFile(file, (base64) => setPpdbImageUrl(base64));
+                            }
+                          }}
+                        />
+
+                        {/* Collapsible/Optional text input for Image URL */}
+                        <div className="pt-2">
+                          <details className="group">
+                            <summary className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest cursor-pointer list-none select-none flex items-center gap-1 hover:text-neutral-600">
+                              <span className="transition-transform group-open:rotate-90">▶</span>
+                              Atau gunakan URL Link Gambar
+                            </summary>
+                            <div className="pt-2">
+                              <div className="relative">
+                                 <input 
+                                   type="text" 
+                                   className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500 text-sm" 
+                                   value={ppdbImageUrl} 
+                                   onChange={(e) => setPpdbImageUrl(e.target.value)}
+                                   placeholder="https://..." 
+                                 />
+                                 <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                              </div>
+                            </div>
+                          </details>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">URL Link Pendaftaran (Online)</label>
-                         <div className="relative">
-                            <input 
-                              type="text" 
-                              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500" 
-                              value={ppdbLink} 
-                              onChange={(e) => setPpdbLink(e.target.value)}
-                              placeholder="https://form.google.com/..." 
-                            />
-                            <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-                         </div>
+
+                      <div className="flex flex-col justify-start space-y-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">URL Link Pendaftaran (Online)</label>
+                           <div className="relative">
+                              <input 
+                                type="text" 
+                                className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500" 
+                                value={ppdbLink} 
+                                onChange={(e) => setPpdbLink(e.target.value)}
+                                placeholder="https://form.google.com/..." 
+                              />
+                              <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                           </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -399,17 +581,80 @@ export default function AdminSchoolProfile() {
                            placeholder="Contoh: 19700101 200003 1 001" 
                          />
                       </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">URL Foto Kepala Sekolah</label>
-                         <div className="relative">
-                            <input 
-                              type="text" 
-                              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500" 
-                              value={principalImageUrl} 
-                              onChange={(e) => setPrincipalImageUrl(e.target.value)}
-                              placeholder="https://images.unsplash.com/..." 
-                            />
-                            <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                      <div className="space-y-4">
+                         <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1 font-bold">Foto Kepala Sekolah</label>
+                         
+                         {principalImageUrl ? (
+                           <div className="relative group border border-neutral-200 rounded-[2rem] p-4 bg-neutral-50/50 flex flex-col items-center">
+                             <div className="w-48 h-60 rounded-2xl overflow-hidden bg-neutral-100 flex items-center justify-center border border-neutral-200 shadow-inner">
+                               <img 
+                                 src={principalImageUrl} 
+                                 alt="Kepala Sekolah" 
+                                 className="h-full w-full object-cover"
+                               />
+                             </div>
+                             <div className="flex gap-3 mt-4 w-full justify-center">
+                               <button
+                                 type="button"
+                                 onClick={() => fileInputPrincipalRef.current?.click()}
+                                 className="flex items-center gap-2 text-xs font-bold bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-2.5 rounded-xl transition-all"
+                               >
+                                 <Upload size={14} /> Ganti Gambar
+                               </button>
+                               <button
+                                 type="button"
+                                 onClick={() => setPrincipalImageUrl('')}
+                                 className="flex items-center gap-2 text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2.5 rounded-xl transition-all"
+                               >
+                                 <Trash2 size={14} /> Hapus
+                               </button>
+                             </div>
+                           </div>
+                         ) : (
+                           <div 
+                             onClick={() => fileInputPrincipalRef.current?.click()}
+                             className="border-2 border-dashed border-neutral-200 rounded-[2rem] p-8 text-center hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer group"
+                           >
+                             <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                               <Upload size={24} className="text-emerald-600" />
+                             </div>
+                             <p className="font-bold text-neutral-700 text-sm">Upload Foto Kepala Sekolah</p>
+                             <p className="text-[10px] text-neutral-400 mt-1">Klik untuk memilih file gambar dari komputer Anda</p>
+                           </div>
+                         )}
+                         <input 
+                           ref={fileInputPrincipalRef}
+                           type="file" 
+                           accept="image/*" 
+                           className="hidden" 
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               processImageFile(file, (base64) => setPrincipalImageUrl(base64));
+                             }
+                           }}
+                         />
+
+                         {/* Collapsible/Optional text input for Image URL */}
+                         <div className="pt-2">
+                           <details className="group">
+                             <summary className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest cursor-pointer list-none select-none flex items-center gap-1 hover:text-neutral-600">
+                               <span className="transition-transform group-open:rotate-90">▶</span>
+                               Atau gunakan URL Link Gambar
+                             </summary>
+                             <div className="pt-2">
+                               <div className="relative">
+                                  <input 
+                                    type="text" 
+                                    className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl pl-12 pr-6 py-4 focus:ring-2 focus:ring-emerald-500 text-sm" 
+                                    value={principalImageUrl} 
+                                    onChange={(e) => setPrincipalImageUrl(e.target.value)}
+                                    placeholder="https://images.unsplash.com/..." 
+                                  />
+                                  <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                               </div>
+                             </div>
+                           </details>
                          </div>
                       </div>
                     </div>
