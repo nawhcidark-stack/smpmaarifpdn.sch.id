@@ -19,6 +19,7 @@ interface VideoItem {
   youtubeId: string;
   description: string;
   order: number;
+  showOnHomepage?: boolean;
 }
 
 export default function AdminVideos() {
@@ -29,7 +30,8 @@ export default function AdminVideos() {
     title: '',
     youtubeId: '',
     description: '',
-    order: 0
+    order: 0,
+    showOnHomepage: false
   });
 
   useEffect(() => {
@@ -56,7 +58,8 @@ export default function AdminVideos() {
       title: item.title,
       youtubeId: item.youtubeId,
       description: item.description || '',
-      order: item.order
+      order: item.order,
+      showOnHomepage: !!item.showOnHomepage
     });
     setIsModalOpen(true);
   };
@@ -68,7 +71,8 @@ export default function AdminVideos() {
       title: '', 
       youtubeId: '', 
       description: '',
-      order: 0 
+      order: 0,
+      showOnHomepage: false
     });
   };
 
@@ -110,6 +114,11 @@ export default function AdminVideos() {
                {videos.map((item) => (
                   <div key={item.id} className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-neutral-200 group">
                      <div className="aspect-video bg-neutral-100 relative group-hover:bg-neutral-200 transition-colors">
+                        {item.showOnHomepage && (
+                           <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                              ● Beranda
+                           </div>
+                        )}
                         <img 
                           src={`https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`} 
                           alt={item.title} 
@@ -176,6 +185,21 @@ export default function AdminVideos() {
                 <div className="space-y-2">
                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">Keterangan Singkat</label>
                    <textarea className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 h-24 resize-none" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                </div>
+                <div className="flex items-center gap-3 bg-neutral-50 p-4 rounded-xl border border-neutral-200 hover:bg-neutral-100/50 transition-all cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, showOnHomepage: !prev.showOnHomepage }))}>
+                   <input 
+                      type="checkbox" 
+                      className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 border-neutral-300 transition-colors cursor-pointer"
+                      checked={formData.showOnHomepage} 
+                      onChange={(e) => {
+                         e.stopPropagation();
+                         setFormData({...formData, showOnHomepage: e.target.checked});
+                      }} 
+                   />
+                   <div>
+                      <p className="text-xs font-bold text-neutral-800">Tampilkan di Beranda</p>
+                      <p className="text-[10px] text-neutral-500">Video ini akan ditampilkan di halaman utama.</p>
+                   </div>
                 </div>
                 <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-xl mt-4">
                    {editingId ? 'Simpan Perubahan' : 'Tambahkan Video'}

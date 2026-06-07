@@ -111,7 +111,8 @@
         "youtubeId": { "type": "string" },
         "description": { "type": "string" },
         "order": { "type": "integer" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "showOnHomepage": { "type": "boolean" }
       },
       "required": ["title", "youtubeId", "order", "createdAt"]
     },

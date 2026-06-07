@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Newspaper, Users, Award, BookOpen, ArrowRight, Send, CheckCircle2, AlertCircle, Megaphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Newspaper, Users, Award, BookOpen, ArrowRight, Send, CheckCircle2, AlertCircle, Megaphone, Play, Youtube, Video, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -35,7 +35,13 @@ export default function Home() {
   const [news, setNews] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [config, setConfig] = useState<SchoolConfig | null>(null);
+
+  // Video Slider states
+  const [activeDotIndex, setActiveDotIndex] = useState(0);
+  const videoScrollRef = useRef<HTMLDivElement>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -72,6 +78,13 @@ export default function Home() {
       setGallery(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
+    const qVideos = query(collection(db, 'videos'), orderBy('order', 'asc'));
+    const unsubVideos = onSnapshot(qVideos, (snapshot) => {
+      const allVideos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const featuredVideos = allVideos.filter((v: any) => v.showOnHomepage === true).slice(0, 5);
+      setVideos(featuredVideos);
+    });
+
     // Fetch config for PPDB
     const fetchConfig = async () => {
       try {
@@ -90,6 +103,7 @@ export default function Home() {
       unsubNews();
       unsubTeachers();
       unsubGallery();
+      unsubVideos();
     };
   }, []);
 
@@ -126,6 +140,67 @@ export default function Home() {
     const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
   }, [activeSlides.length]);
+
+  const handleScrollActiveIndex = () => {
+    if (videoScrollRef.current) {
+      const { scrollLeft, clientWidth } = videoScrollRef.current;
+      if (clientWidth === 0) return;
+      const carouselChildren = videoScrollRef.current.children;
+      if (carouselChildren.length > 0) {
+        const cardWidth = (carouselChildren[0] as HTMLElement).getBoundingClientRect().width + 24;
+        const index = Math.round(scrollLeft / cardWidth);
+        setActiveDotIndex(Math.min(index, videos.length - 1));
+      } else {
+        const index = Math.round(scrollLeft / clientWidth);
+        setActiveDotIndex(index);
+      }
+    }
+  };
+
+  const scrollVideos = (direction: 'left' | 'right') => {
+    if (videoScrollRef.current) {
+      const { scrollLeft, clientWidth, scrollWidth } = videoScrollRef.current;
+      const carouselChildren = videoScrollRef.current.children;
+      const cardWidth = carouselChildren.length > 0 
+        ? (carouselChildren[0] as HTMLElement).getBoundingClientRect().width 
+        : clientWidth;
+      const scrollAmount = cardWidth + 24;
+      
+      let nextScroll = direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount;
+      
+      if (direction === 'right' && scrollLeft + clientWidth >= scrollWidth - 25) {
+        nextScroll = 0;
+      } else if (direction === 'left' && scrollLeft <= 10) {
+        nextScroll = scrollWidth;
+      }
+
+      videoScrollRef.current.scrollTo({
+        left: nextScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (videos.length <= 1) return;
+    const interval = setInterval(() => {
+      if (videoScrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = videoScrollRef.current;
+        const carouselChildren = videoScrollRef.current.children;
+        const cardWidth = carouselChildren.length > 0 
+          ? (carouselChildren[0] as HTMLElement).getBoundingClientRect().width 
+          : clientWidth;
+        const scrollAmount = cardWidth + 24;
+
+        if (scrollLeft + clientWidth >= scrollWidth - 25) {
+          videoScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          videoScrollRef.current.scrollTo({ left: scrollLeft + scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [videos.length]);
 
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen pb-20">
@@ -439,6 +514,137 @@ export default function Home() {
         </div>
 
       </main>
+
+      {/* Video Gallery Section */}
+      {videos.length > 0 && (
+        <section className="bg-slate-900 text-white py-16 border-t border-slate-800">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+              <div>
+                <span className="bg-emerald-500/15 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full w-fit mb-3 inline-flex items-center gap-1.5">
+                  <Play size={10} className="fill-emerald-400 text-emerald-400 animate-pulse" /> Galeri Video Pilihan
+                </span>
+                <h3 className="text-3xl font-black text-white tracking-tight">Dokumentasi & Kegiatan Sekolah</h3>
+                <p className="text-slate-400 text-sm mt-2 max-w-xl">Intip keseruan, prestasi, dan kegiatan belajar mengajar di SMP Maarif NU Pandaan.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link 
+                  to="/galeri/video" 
+                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors group mr-2"
+                >
+                  Lihat Semua <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <button 
+                  onClick={() => scrollVideos('left')}
+                  className="w-10 h-10 rounded-full bg-slate-800 hover:bg-emerald-600 hover:text-white border border-slate-700 transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button 
+                  onClick={() => scrollVideos('right')}
+                  className="w-10 h-10 rounded-full bg-slate-800 hover:bg-emerald-600 hover:text-white border border-slate-700 transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden">
+              <div 
+                ref={videoScrollRef}
+                onScroll={handleScrollActiveIndex}
+                className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {videos.map((video, idx) => (
+                  <div 
+                    key={video.id} 
+                    className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start bg-slate-850 rounded-[2.5rem] overflow-hidden border border-slate-800 hover:border-emerald-500/40 hover:bg-slate-800/80 transition-all shadow-xl group/card flex flex-col h-full cursor-pointer"
+                    onClick={() => setSelectedVideo(video.youtubeId)}
+                  >
+                    <div className="aspect-video relative overflow-hidden bg-slate-950">
+                      <img 
+                        src={`https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`} 
+                        alt={video.title} 
+                        className="w-full h-full object-cover opacity-80 group-hover/card:opacity-100 transition-all duration-700 group-hover/card:scale-105"
+                        onError={(e) => {
+                           (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-slate-950/20 group-hover/card:bg-slate-950/45 transition-colors flex items-center justify-center">
+                        <div className="w-14 h-14 bg-white text-slate-900 rounded-full flex items-center justify-center shadow-2xl group-hover/card:scale-110 transition-transform duration-500 relative">
+                          <div className="absolute inset-x-0 inset-y-0 bg-white rounded-full animate-ping opacity-25 group-hover/card:animate-none"></div>
+                          <Play size={20} className="text-rose-600 fill-rose-600 ml-0.5 relative z-10" />
+                        </div>
+                      </div>
+                      <div className="absolute top-4 right-4 p-2 bg-slate-950/40 backdrop-blur-md rounded-full text-white">
+                        <Youtube size={18} />
+                      </div>
+                      <div className="absolute bottom-3 left-4 bg-slate-950/60 backdrop-blur-sm text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md text-emerald-400 font-mono">
+                        Video {idx + 1} / {videos.length}
+                      </div>
+                    </div>
+                    <div className="p-6 flex flex-col flex-grow justify-between gap-3">
+                      <div>
+                        <h4 className="text-base font-extrabold text-white group-hover/card:text-emerald-400 transition-colors line-clamp-1">{video.title}</h4>
+                        <p className="text-[11px] text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">{video.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Dot Indicators */}
+              <div className="flex justify-center gap-1.5 mt-6">
+                {videos.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (videoScrollRef.current) {
+                        const targetCard = videoScrollRef.current.children[idx] as HTMLElement;
+                        if (targetCard) {
+                          videoScrollRef.current.scrollTo({
+                            left: targetCard.offsetLeft - videoScrollRef.current.offsetLeft,
+                            behavior: 'smooth'
+                          });
+                        }
+                      }
+                    }}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      activeDotIndex === idx ? "w-8 bg-emerald-500" : "w-2 bg-slate-700 hover:bg-slate-500"
+                    )}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Video Modal Overlay */}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="relative w-full max-w-4xl aspect-video rounded-3xl overflow-hidden shadow-2xl">
+            <button 
+              onClick={() => setSelectedVideo(null)} 
+              className="absolute -top-12 right-0 md:top-4 md:right-4 z-10 bg-black/60 hover:bg-black/90 text-white p-3 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+            <iframe 
+              src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`} 
+              title="YouTube video player" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );

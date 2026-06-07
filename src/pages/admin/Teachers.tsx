@@ -30,7 +30,56 @@ export default function AdminTeachers() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<{current: number, total: number} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputTeacherRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+
+  const processImageFile = (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setUploadError('File harus berupa gambar (PNG, JPG, WEBP).');
+      return;
+    }
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          setFormData(prev => ({ ...prev, photoUrl: compressedBase64 }));
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      setUploadError('Gagal membaca file gambar.');
+    };
+    reader.readAsDataURL(file);
+  };
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -186,16 +235,73 @@ export default function AdminTeachers() {
                    <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Bio Singkat</label>
                    <textarea className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 h-24 resize-none" value={formData.bio} onChange={(e) => setFormData({...formData, bio: e.target.value})}></textarea>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">URL Foto</label>
-                      <input type="text" className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500" value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Urutan Tampil</label>
-                      <input type="number" className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500" value={formData.order} onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})} />
-                   </div>
-                </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Foto Profil Guru</label>
+                    <div 
+                       onClick={() => fileInputTeacherRef.current?.click()}
+                       className="border-2 border-dashed border-neutral-200 hover:border-emerald-500 rounded-[2rem] p-6 text-center hover:bg-emerald-50/20 transition-all cursor-pointer group relative flex flex-col items-center justify-center min-h-[140px]"
+                    >
+                       {formData.photoUrl ? (
+                          <div className="flex flex-col items-center gap-2">
+                             <img 
+                                src={formData.photoUrl} 
+                                alt="Preview Guru" 
+                                className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500 shadow-md"
+                             />
+                             <p className="text-xs text-neutral-500 font-bold group-hover:text-emerald-600 transition-colors">Klik untuk Mengganti Foto</p>
+                          </div>
+                       ) : (
+                          <div className="space-y-2">
+                             <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-all">
+                                <Camera size={24} className="text-emerald-600" />
+                             </div>
+                             <div>
+                                <p className="font-bold text-neutral-700 text-sm">Upload Foto Langsung</p>
+                                <p className="text-[10px] text-neutral-400 mt-0.5">Pilih file gambar dari penyimpanan computer/HP Anda</p>
+                             </div>
+                          </div>
+                       )}
+                       
+                       <input 
+                          ref={fileInputTeacherRef}
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                                processImageFile(file);
+                             }
+                          }}
+                       />
+                    </div>
+                    {uploadError && (
+                       <p className="text-xs text-rose-500 font-semibold px-2">{uploadError}</p>
+                    )}
+
+                    <div className="pt-2">
+                       <details className="group">
+                          <summary className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest cursor-pointer list-none select-none flex items-center gap-1 hover:text-neutral-600">
+                             <span className="transition-transform group-open:rotate-90 text-[8px]">▶</span>
+                             Atau gunakan link URL Foto
+                          </summary>
+                          <div className="pt-2">
+                             <input 
+                                type="text"
+                                placeholder="https://example.com/foto-guru.jpg"
+                                className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 text-sm" 
+                                value={formData.photoUrl} 
+                                onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} 
+                             />
+                          </div>
+                       </details>
+                    </div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Urutan Tampil</label>
+                    <input type="number" className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500" value={formData.order} onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})} />
+                 </div>
                 <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 shadow-xl">
                    Simpan Data Guru
                 </button>
