@@ -76,11 +76,14 @@
       "properties": {
         "name": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
         "subject": { "type": "string" },
         "message": { "type": "string" },
+        "replyMessage": { "type": "string" },
+        "repliedAt": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "email", "message", "createdAt"]
+      "required": ["name", "message", "createdAt"]
     },
     "Achievement": {
       "title": "Achievement",
