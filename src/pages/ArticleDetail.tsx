@@ -84,10 +84,17 @@ export default function ArticleDetail() {
               />
             </div>
 
-            <div className="prose prose-emerald prose-lg max-w-none text-slate-700 leading-relaxed bg-white p-10 md:p-16 rounded-[3rem] border border-slate-100 shadow-sm markdown-body">
-              <ReactMarkdown>
-                {article.content}
-              </ReactMarkdown>
+            <div className="prose prose-emerald prose-lg max-w-none text-slate-700 leading-relaxed bg-white p-10 md:p-16 rounded-[3rem] border border-slate-100 shadow-sm markdown-body font-normal">
+              {article.content && (/<[a-z][\s\S]*>/i.test(article.content) || article.content.trim().startsWith('<')) ? (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: article.content }} 
+                  className="space-y-4"
+                />
+              ) : (
+                <ReactMarkdown>
+                  {article.content}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
 

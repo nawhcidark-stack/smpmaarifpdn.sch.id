@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { orderBy, query } from 'firebase/firestore';
+import RichTextEditor from '../../components/RichTextEditor';
 
 interface Article {
   id: string;
@@ -165,67 +166,65 @@ export default function AdminArticles() {
                 {editingArticle ? 'Edit Posting' : 'Buat Posting Baru'}
              </h2>
 
-             <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                         <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Judul Berita</label>
-                         <input 
-                           required
-                           type="text"
-                           placeholder="Judul Berita"
-                           className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all font-bold text-neutral-800"
-                           value={formData.title}
-                           onChange={(e) => setFormData({...formData, title: e.target.value})}
-                         />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Kategori</label>
-                         <select 
-                           className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all appearance-none font-bold"
-                           value={formData.category}
-                           onChange={(e) => setFormData({...formData, category: e.target.value})}
-                         >
-                            <option value="berita">Berita</option>
-                            <option value="pengumuman">Pengumuman</option>
-                            <option value="informasi">Informasi</option>
-                         </select>
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">URL Gambar (Opsional)</label>
-                         <input 
-                           type="text"
-                           placeholder="https://images.unsplash.com/..."
-                           className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all"
-                           value={formData.imageUrl}
-                           onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                         />
-                      </div>
-                   </div>
-
-                   <div className="flex flex-col gap-2">
-                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Konten Berita (Markdown)</label>
-                      <textarea 
+             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Metadata Fields Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Judul Berita</label>
+                      <input 
                         required
-                        className="flex-grow bg-neutral-100 border-none rounded-3xl px-6 py-6 focus:ring-2 focus:ring-emerald-500 transition-all resize-none min-h-[200px]"
-                        placeholder="Gunakan Markdown untuk format text..."
-                        value={formData.content}
-                        onChange={(e) => setFormData({...formData, content: e.target.value})}
-                      ></textarea>
+                        type="text"
+                        placeholder="Judul Berita"
+                        className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all font-bold text-neutral-800"
+                        value={formData.title}
+                        onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      />
                    </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Kategori</label>
+                      <select 
+                        className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all appearance-none font-bold text-neutral-800"
+                        value={formData.category}
+                        onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      >
+                         <option value="berita">Berita</option>
+                         <option value="pengumuman">Pengumuman</option>
+                         <option value="informasi">Informasi</option>
+                      </select>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">URL Gambar (Opsional)</label>
+                      <input 
+                        type="text"
+                        placeholder="https://images.unsplash.com/..."
+                        className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all text-neutral-800"
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                      />
+                   </div>
+                </div>
+
+                {/* WYSIWYG Rich Editor Block */}
+                <div className="flex flex-col gap-2">
+                   <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Konten Berita</label>
+                   <RichTextEditor 
+                     value={formData.content} 
+                     onChange={(contentHTML) => setFormData(p => ({ ...p, content: contentHTML }))}
+                     placeholder="Mulai ketik artikel berita sekolah di sini, atau paste langsung dari sumber berita lain dengan formatting lengkap..."
+                   />
                 </div>
 
                 <div className="pt-4 flex justify-end gap-4">
                    <button 
                      type="button"
                      onClick={() => setIsModalOpen(false)}
-                     className="px-8 py-3 rounded-full font-bold text-neutral-500 hover:bg-neutral-100 transition-all"
+                     className="px-8 py-3 rounded-full font-bold text-neutral-500 hover:bg-neutral-100 transition-all cursor-pointer"
                    >
                      Batal
                    </button>
                    <button 
                      type="submit"
-                     className="bg-emerald-600 text-white px-10 py-3 rounded-full font-bold hover:bg-emerald-700 transition-all shadow-lg active:scale-95"
+                     className="bg-emerald-600 text-white px-10 py-3 rounded-full font-bold hover:bg-emerald-700 transition-all shadow-lg active:scale-95 cursor-pointer"
                    >
                      {editingArticle ? 'Update Berita' : 'Publikasikan'}
                    </button>

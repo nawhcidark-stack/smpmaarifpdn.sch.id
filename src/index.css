@@ -45,6 +45,42 @@
   @apply leading-relaxed text-slate-600;
 }
 
+/* Custom Rich Editor & Prose formatting overrides */
+.rich-editor-content ul, .prose ul, .markdown-body ul {
+  list-style-type: disc !important;
+  padding-left: 24px !important;
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.rich-editor-content ol, .prose ol, .markdown-body ol {
+  list-style-type: decimal !important;
+  padding-left: 24px !important;
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.rich-editor-content blockquote, .prose blockquote, .markdown-body blockquote {
+  border-left: 4px solid #059669 !important;
+  padding-left: 16px !important;
+  margin: 16px 0 !important;
+  font-style: italic !important;
+  color: #4b5563 !important;
+  background-color: #f9fafb !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  border-radius: 4px !important;
+}
+
+.rich-editor-content a, .prose a, .markdown-body a {
+  color: #059669 !important;
+  text-decoration: underline !important;
+}
+
+.rich-editor-content a:hover, .prose a:hover, .markdown-body a:hover {
+  color: #047857 !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
