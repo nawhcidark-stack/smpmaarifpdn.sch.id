@@ -216,8 +216,8 @@ export default function AdminTeachers() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 relative my-8">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 relative my-4 md:my-10">
              <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-2 text-neutral-500">
                 <X size={24} />
              </button>
@@ -310,8 +310,8 @@ export default function AdminTeachers() {
         </div>
       )}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 relative">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl p-10 relative my-4 md:my-10">
              <button onClick={() => setIsImportModalOpen(false)} className="absolute top-8 right-8 p-2 text-neutral-500">
                 <X size={24} />
              </button>
