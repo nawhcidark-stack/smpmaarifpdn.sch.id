@@ -11,9 +11,16 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  MessageCircle
+  MessageCircle,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  RotateCcw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const DEFAULT_LOGO1 = 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500';
+const DEFAULT_LOGO2 = 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500';
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
@@ -28,8 +35,52 @@ export default function AdminSettings() {
     facebookUrl: '',
     instagramUrl: '',
     youtubeUrl: '',
-    whatsappNumber: '628123456789'
+    whatsappNumber: '628123456789',
+    logo1Url: DEFAULT_LOGO1,
+    logo2Url: DEFAULT_LOGO2
   });
+
+  const [isUploadingLogo1, setIsUploadingLogo1] = useState(false);
+  const [isUploadingLogo2, setIsUploadingLogo2] = useState(false);
+  const [logo1Error, setLogo1Error] = useState('');
+  const [logo2Error, setLogo2Error] = useState('');
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'logo1Url' | 'logo2Url') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isLogo1 = fieldName === 'logo1Url';
+    const setError = isLogo1 ? setLogo1Error : setLogo2Error;
+    const setUploading = isLogo1 ? setIsUploadingLogo1 : setIsUploadingLogo2;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Hanya file gambar yang diperbolehkan.');
+      return;
+    }
+
+    if (file.size > 800 * 1024) { // 800KB limit for firestore compatibility
+      setError('Ukuran gambar terlalu besar. Maksimal 800KB.');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: base64String
+      }));
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setError('Gagal membaca file gambar.');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     async function loadSettings() {
@@ -161,6 +212,128 @@ export default function AdminSettings() {
                              value={formData.email}
                              onChange={e => setFormData({...formData, email: e.target.value})}
                            />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Logo Sekolah */}
+               <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-neutral-200 space-y-6 md:col-span-2">
+                  <div className="flex items-center gap-3 text-emerald-600 mb-2">
+                     <ImageIcon size={24} />
+                     <h2 className="text-lg font-black uppercase tracking-widest">Logo Sekolah</h2>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {/* Logo 1 */}
+                     <div className="space-y-4 bg-neutral-50/50 p-6 rounded-3xl border border-neutral-100">
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Logo 1 (Kiri - Contoh: Lembaga/NU)</h3>
+                           <button
+                             type="button"
+                             onClick={() => setFormData(prev => ({ ...prev, logo1Url: DEFAULT_LOGO1 }))}
+                             className="text-neutral-500 hover:text-emerald-700 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                             title="Kembalikan ke default"
+                           >
+                              <RotateCcw size={12} /> Default
+                           </button>
+                        </div>
+                        
+                        <div className="flex items-center gap-6">
+                           <div className="w-20 h-20 bg-white rounded-2xl border border-neutral-200 flex items-center justify-center p-2 shrink-0 shadow-sm">
+                              {formData.logo1Url ? (
+                                 <img 
+                                   src={formData.logo1Url} 
+                                   alt="Logo 1 Preview" 
+                                   className="max-w-full max-h-full object-contain"
+                                   referrerPolicy="no-referrer"
+                                 />
+                              ) : (
+                                 <ImageIcon size={32} className="text-neutral-300" />
+                              )}
+                           </div>
+                           
+                           <div className="flex-grow space-y-2">
+                              <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">Unggah Gambar (Maks 800KB)</label>
+                              <div className="flex gap-2">
+                                 <label className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-sm flex items-center gap-1.5">
+                                    <Upload size={12} />
+                                    {isUploadingLogo1 ? 'Mengunggah...' : 'Pilih File'}
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={(e) => handleLogoUpload(e, 'logo1Url')} 
+                                      className="hidden" 
+                                    />
+                                 </label>
+                              </div>
+                              <input 
+                                type="url" 
+                                placeholder="Atau masukkan URL gambar..."
+                                className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-700 focus:ring-1 focus:ring-emerald-500"
+                                value={formData.logo1Url}
+                                onChange={e => setFormData({ ...formData, logo1Url: e.target.value })}
+                              />
+                              {logo1Error && (
+                                 <p className="text-[10px] font-bold text-rose-600">{logo1Error}</p>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Logo 2 */}
+                     <div className="space-y-4 bg-neutral-50/50 p-6 rounded-3xl border border-neutral-100">
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Logo 2 (Kanan - Contoh: Logo Sekolah)</h3>
+                           <button
+                             type="button"
+                             onClick={() => setFormData(prev => ({ ...prev, logo2Url: DEFAULT_LOGO2 }))}
+                             className="text-neutral-500 hover:text-emerald-700 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                             title="Kembalikan ke default"
+                           >
+                              <RotateCcw size={12} /> Default
+                           </button>
+                        </div>
+                        
+                        <div className="flex items-center gap-6">
+                           <div className="w-20 h-20 bg-white rounded-2xl border border-neutral-200 flex items-center justify-center p-2 shrink-0 shadow-sm">
+                              {formData.logo2Url ? (
+                                 <img 
+                                   src={formData.logo2Url} 
+                                   alt="Logo 2 Preview" 
+                                   className="max-w-full max-h-full object-contain"
+                                   referrerPolicy="no-referrer"
+                                 />
+                              ) : (
+                                 <ImageIcon size={32} className="text-neutral-300" />
+                              )}
+                           </div>
+                           
+                           <div className="flex-grow space-y-2">
+                              <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">Unggah Gambar (Maks 800KB)</label>
+                              <div className="flex gap-2">
+                                 <label className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-sm flex items-center gap-1.5">
+                                    <Upload size={12} />
+                                    {isUploadingLogo2 ? 'Mengunggah...' : 'Pilih File'}
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={(e) => handleLogoUpload(e, 'logo2Url')} 
+                                      className="hidden" 
+                                    />
+                                 </label>
+                              </div>
+                              <input 
+                                type="url" 
+                                placeholder="Atau masukkan URL gambar..."
+                                className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-700 focus:ring-1 focus:ring-emerald-500"
+                                value={formData.logo2Url}
+                                onChange={e => setFormData({ ...formData, logo2Url: e.target.value })}
+                              />
+                              {logo2Error && (
+                                 <p className="text-[10px] font-bold text-rose-600">{logo2Error}</p>
+                              )}
+                           </div>
                         </div>
                      </div>
                   </div>

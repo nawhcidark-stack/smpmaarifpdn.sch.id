@@ -32,6 +32,8 @@ service cloud.firestore {
           && data.content is string && data.content.size() <= 50000
           && data.imageUrl is string
           && data.category in ['berita', 'pengumuman', 'informasi']
+          && (!('pdfUrl' in data) || (data.pdfUrl is string && data.pdfUrl.size() <= 2000))
+          && (!('pdfName' in data) || (data.pdfName is string && data.pdfName.size() <= 300))
           && (data.authorId == request.auth.uid || isAdmin())
           && data.createdAt is timestamp
           && data.updatedAt is timestamp;
@@ -41,6 +43,14 @@ service cloud.firestore {
     match /gallery/{itemId} {
       allow read: if true;
       allow create: if isAdmin() && isValidId(itemId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Gallery Albums Rules
+    match /gallery_albums/{albumId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(albumId);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

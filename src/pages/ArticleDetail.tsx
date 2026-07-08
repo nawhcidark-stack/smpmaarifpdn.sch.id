@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
-import { Calendar, Tag, ChevronLeft, Share2 } from 'lucide-react';
+import { Calendar, Tag, ChevronLeft, Share2, FileText } from 'lucide-react';
 
 export default function ArticleDetail() {
   const { id: articleId } = useParams();
@@ -96,6 +96,48 @@ export default function ArticleDetail() {
                 </ReactMarkdown>
               )}
             </div>
+
+            {article.pdfUrl && (
+              <div className="bg-white p-6 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
+                      <FileText size={24} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-slate-800 text-base">Dokumen Terlampir</h3>
+                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider truncate max-w-xs md:max-w-md">{article.pdfName || 'Dokumen_Lampiran.pdf'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    <a 
+                      href={article.pdfUrl} 
+                      download={article.pdfName || 'Dokumen_Lampiran.pdf'}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/10 cursor-pointer"
+                    >
+                      Unduh PDF
+                    </a>
+                    <a 
+                      href={article.pdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-slate-50 hover:bg-slate-100 text-slate-700 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 border border-slate-200 cursor-pointer"
+                    >
+                      Buka di Tab Baru
+                    </a>
+                  </div>
+                </div>
+
+                {/* Embedded PDF Viewer (iframe) */}
+                <div className="aspect-[4/5] md:aspect-[3/4] lg:aspect-[16/21] w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+                  <iframe 
+                    src={article.pdfUrl} 
+                    className="w-full h-full border-none"
+                    title={article.pdfName || 'Dokumen Lampiran'}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar / Info (4 columns) */}

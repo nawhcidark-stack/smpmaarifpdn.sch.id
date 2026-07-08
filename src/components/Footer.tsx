@@ -15,7 +15,9 @@ export default function Footer() {
     facebookUrl: '#',
     instagramUrl: '#',
     youtubeUrl: '#',
-    whatsappNumber: '628123456789'
+    whatsappNumber: '628123456789',
+    logo1Url: 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500',
+    logo2Url: 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'
   });
 
   useEffect(() => {
@@ -36,13 +38,13 @@ export default function Footer() {
             <div className="flex items-center gap-6">
                <div className="flex gap-4 items-center">
                  <img 
-                   src="https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500" 
+                   src={settings.logo1Url || 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500'} 
                    alt="Logo NU" 
                    className="h-12 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-all"
                    referrerPolicy="no-referrer"
                  />
                  <img 
-                   src="https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500" 
+                   src={settings.logo2Url || 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'} 
                    alt="Logo Sekolah" 
                    className="h-12 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-all"
                    referrerPolicy="no-referrer"

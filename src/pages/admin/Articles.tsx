@@ -11,7 +11,11 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   LayoutGrid,
-  List as ListIcon
+  List as ListIcon,
+  Paperclip,
+  Upload,
+  FileText,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -25,6 +29,8 @@ interface Article {
   content: string;
   imageUrl: string;
   category: string;
+  pdfUrl?: string;
+  pdfName?: string;
   createdAt: any;
 }
 
@@ -33,19 +39,32 @@ export default function AdminArticles() {
   const { data: articles, fetchData, add, update, remove, loading } = useFirestore<Article>('articles');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     imageUrl: '',
     category: 'berita',
+    pdfUrl: '',
+    pdfName: '',
   });
+
+  const [pdfSourceType, setPdfSourceType] = useState<'file' | 'url'>('file');
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [pdfUploadError, setPdfUploadError] = useState('');
+
+  const [imageSourceType, setImageSourceType] = useState<'file' | 'url'>('file');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState('');
 
   useEffect(() => {
     fetchData(orderBy('createdAt', 'desc'));
   }, []);
 
   const resetForm = () => {
-    setFormData({ title: '', content: '', imageUrl: '', category: 'berita' });
+    setFormData({ title: '', content: '', imageUrl: '', category: 'berita', pdfUrl: '', pdfName: '' });
+    setPdfUploadError('');
+    setImageUploadError('');
     setEditingArticle(null);
   };
 
@@ -57,11 +76,84 @@ export default function AdminArticles() {
         content: article.content,
         imageUrl: article.imageUrl,
         category: article.category,
+        pdfUrl: article.pdfUrl || '',
+        pdfName: article.pdfName || '',
       });
+      setPdfSourceType(article.pdfUrl?.startsWith('data:') ? 'file' : 'url');
+      setImageSourceType(article.imageUrl?.startsWith('data:') ? 'file' : 'url');
     } else {
       resetForm();
+      setPdfSourceType('file');
+      setImageSourceType('file');
     }
     setIsModalOpen(true);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setImageUploadError('Hanya file gambar yang diperbolehkan.');
+      return;
+    }
+
+    if (file.size > 800 * 1024) { // 800KB safe limit for Firestore 1MB doc size limit
+      setImageUploadError('Ukuran gambar terlalu besar. Maksimal 800KB.');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageUploadError('');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: base64String
+      }));
+      setIsUploadingImage(false);
+    };
+    reader.onerror = () => {
+      setImageUploadError('Gagal membaca file gambar.');
+      setIsUploadingImage(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      setPdfUploadError('Hanya file PDF yang diperbolehkan.');
+      return;
+    }
+
+    if (file.size > 800 * 1024) { // 800KB safe limit for Firestore 1MB doc size limit
+      setPdfUploadError('Ukuran file PDF terlalu besar. Maksimal 800KB.');
+      return;
+    }
+
+    setIsUploadingPdf(true);
+    setPdfUploadError('');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({
+        ...prev,
+        pdfUrl: base64String,
+        pdfName: file.name
+      }));
+      setIsUploadingPdf(false);
+    };
+    reader.onerror = () => {
+      setPdfUploadError('Gagal membaca file PDF.');
+      setIsUploadingPdf(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,8 +261,8 @@ export default function AdminArticles() {
              <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Metadata Fields Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                   <div className="space-y-2">
-                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Judul Berita</label>
+                   <div className="md:col-span-2 space-y-2">
+                       <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Judul Berita</label>
                       <input 
                         required
                         type="text"
@@ -192,19 +284,113 @@ export default function AdminArticles() {
                          <option value="informasi">Informasi</option>
                       </select>
                    </div>
-                   <div className="space-y-2">
-                      <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">URL Gambar (Opsional)</label>
-                      <input 
-                        type="text"
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full bg-neutral-100 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-emerald-500 transition-all text-neutral-800"
-                        value={formData.imageUrl}
-                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                      />
-                   </div>
+                   
                 </div>
 
-                {/* WYSIWYG Rich Editor Block */}
+                 {/* Cover Image Section */}
+                 <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200 space-y-4">
+                    <div className="flex items-center gap-2 text-emerald-800">
+                       <ImageIcon size={18} className="text-emerald-600" />
+                       <h3 className="text-sm font-black uppercase tracking-wider">Gambar Sampul Berita</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       {/* Mode Switcher */}
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold text-neutral-500 block">Pilih Cara Input Gambar</label>
+                          <div className="flex gap-2 p-1 bg-neutral-200/50 rounded-xl w-full">
+                             <button
+                               type="button"
+                               onClick={() => setImageSourceType('file')}
+                               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                                 imageSourceType === 'file'
+                                   ? 'bg-white text-slate-800 shadow-sm'
+                                   : 'text-neutral-500 hover:text-slate-700'
+                               }`}
+                             >
+                                Unggah Gambar
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setImageSourceType('url')}
+                               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                                 imageSourceType === 'url'
+                                   ? 'bg-white text-slate-800 shadow-sm'
+                                   : 'text-neutral-500 hover:text-slate-700'
+                               }`}
+                             >
+                                Tautkan URL Gambar
+                             </button>
+                          </div>
+                       </div>
+ 
+                       {/* Interactive Field based on selected Mode */}
+                       <div className="flex flex-col justify-end">
+                          {imageSourceType === 'file' ? (
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-neutral-500 block">Pilih file gambar Anda (Maks. 800KB)</label>
+                                <label className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-4 py-3 rounded-xl cursor-pointer text-xs font-bold transition-all shadow-sm">
+                                   <Upload size={16} className="text-neutral-500" />
+                                   {isUploadingImage ? 'Membaca Gambar...' : 'Pilih File Gambar'}
+                                   <input 
+                                     type="file" 
+                                     accept="image/*" 
+                                     onChange={handleImageFileChange} 
+                                     className="hidden" 
+                                   />
+                                </label>
+                             </div>
+                          ) : (
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-neutral-500 block">URL Link Gambar Online</label>
+                                <input 
+                                  type="url"
+                                  placeholder="https://example.com/gambar.jpg"
+                                  className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 text-xs text-neutral-800 transition-all font-medium"
+                                  value={formData.imageUrl.startsWith('data:') ? '' : formData.imageUrl}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                                />
+                             </div>
+                          )}
+                       </div>
+
+                       {/* Image Preview */}
+                       <div className="flex flex-col justify-center items-center bg-white border border-neutral-200 rounded-2xl p-2 h-24 relative overflow-hidden">
+                          {formData.imageUrl ? (
+                             <>
+                                <img 
+                                  src={formData.imageUrl} 
+                                  alt="Preview Sampul" 
+                                  className="w-full h-full object-cover rounded-xl"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                                  className="absolute top-1 right-1 bg-black/60 hover:bg-rose-600 text-white p-1 rounded-full transition-colors cursor-pointer"
+                                  title="Hapus gambar"
+                                >
+                                   <X size={12} />
+                                </button>
+                             </>
+                          ) : (
+                             <div className="text-center text-neutral-400 space-y-1">
+                                <ImageIcon size={20} className="mx-auto" />
+                                <p className="text-[10px] font-bold uppercase tracking-wider">No Preview</p>
+                             </div>
+                          )}
+                       </div>
+                    </div>
+ 
+                    {imageUploadError && (
+                       <div className="bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-100 text-xs font-bold flex items-center gap-2">
+                          <AlertCircle size={14} className="shrink-0" />
+                          <span>{imageUploadError}</span>
+                       </div>
+                    )}
+                 </div>
+
+                 {/* WYSIWYG Rich Editor Block */}
                 <div className="flex flex-col gap-2">
                    <label className="text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">Konten Berita</label>
                    <RichTextEditor 
@@ -212,6 +398,111 @@ export default function AdminArticles() {
                      onChange={(contentHTML) => setFormData(p => ({ ...p, content: contentHTML }))}
                      placeholder="Mulai ketik artikel berita sekolah di sini, atau paste langsung dari sumber berita lain dengan formatting lengkap..."
                    />
+                </div>
+
+                {/* PDF Attachment Section */}
+                <div className="bg-neutral-50 p-6 rounded-2xl border border-neutral-200 space-y-4">
+                   <div className="flex items-center gap-2 text-emerald-800">
+                      <Paperclip size={18} className="text-emerald-600" />
+                      <h3 className="text-sm font-black uppercase tracking-wider">Lampiran Dokumen PDF (Opsional)</h3>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Mode Switcher */}
+                      <div className="space-y-2">
+                         <label className="text-xs font-bold text-neutral-500 block">Pilih Cara Lampiran</label>
+                         <div className="flex gap-2 p-1 bg-neutral-200/50 rounded-xl w-full">
+                            <button
+                              type="button"
+                              onClick={() => setPdfSourceType('file')}
+                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                                pdfSourceType === 'file'
+                                  ? 'bg-white text-slate-800 shadow-sm'
+                                  : 'text-neutral-500 hover:text-slate-700'
+                              }`}
+                            >
+                               Unggah PDF Lokal
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPdfSourceType('url')}
+                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                                pdfSourceType === 'url'
+                                  ? 'bg-white text-slate-800 shadow-sm'
+                                  : 'text-neutral-500 hover:text-slate-700'
+                              }`}
+                            >
+                               Tautkan URL PDF
+                            </button>
+                         </div>
+                      </div>
+
+                      {/* Interactive Field based on selected Mode */}
+                      <div className="flex flex-col justify-end">
+                         {pdfSourceType === 'file' ? (
+                            <div className="space-y-2">
+                               <label className="text-xs font-bold text-neutral-500 block">Pilih file PDF Anda (Maks. 800KB)</label>
+                               <label className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-4 py-3 rounded-xl cursor-pointer text-xs font-bold transition-all shadow-sm">
+                                  <Upload size={16} className="text-neutral-500" />
+                                  {isUploadingPdf ? 'Membaca File...' : 'Pilih File PDF'}
+                                  <input 
+                                    type="file" 
+                                    accept=".pdf" 
+                                    onChange={handlePdfFileChange} 
+                                    className="hidden" 
+                                  />
+                               </label>
+                            </div>
+                         ) : (
+                            <div className="space-y-2">
+                               <label className="text-xs font-bold text-neutral-500 block">URL Link PDF Online</label>
+                               <input 
+                                 type="url"
+                                 placeholder="https://example.com/dokumen.pdf"
+                                 className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 text-xs text-neutral-800 transition-all font-medium"
+                                 value={formData.pdfUrl.startsWith('data:') ? '' : formData.pdfUrl}
+                                 onChange={(e) => {
+                                   const val = e.target.value;
+                                   setFormData(prev => ({
+                                     ...prev,
+                                     pdfUrl: val,
+                                     pdfName: val ? val.substring(val.lastIndexOf('/') + 1) || 'Dokumen_Lampiran.pdf' : ''
+                                   }));
+                                 }}
+                               />
+                            </div>
+                         )}
+                      </div>
+                   </div>
+
+                   {pdfUploadError && (
+                      <div className="bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-100 text-xs font-bold flex items-center gap-2">
+                         <AlertCircle size={14} className="shrink-0" />
+                         <span>{pdfUploadError}</span>
+                      </div>
+                   )}
+
+                   {formData.pdfUrl && (
+                      <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-100 flex items-center justify-between gap-3 text-xs font-medium">
+                         <div className="flex items-center gap-2.5 min-w-0">
+                            <FileText size={18} className="text-emerald-600 shrink-0" />
+                            <div className="truncate">
+                               <p className="font-extrabold truncate text-emerald-950">{formData.pdfName || 'Dokumen Terlampir.pdf'}</p>
+                               <p className="text-[10px] text-emerald-600 font-bold uppercase mt-0.5 font-mono">
+                                  {formData.pdfUrl.startsWith('data:') ? 'Lokal (Base64 Encoded)' : 'Tautan Eksternal'}
+                                </p>
+                            </div>
+                         </div>
+                         <button
+                           type="button"
+                           onClick={() => setFormData(prev => ({ ...prev, pdfUrl: '', pdfName: '' }))}
+                           className="text-rose-500 hover:text-rose-700 hover:bg-rose-100 p-2 rounded-lg transition-all cursor-pointer"
+                           title="Hapus Lampiran"
+                         >
+                            <Trash2 size={16} />
+                         </button>
+                      </div>
+                   )}
                 </div>
 
                 <div className="pt-4 flex justify-end gap-4">

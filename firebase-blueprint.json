@@ -9,6 +9,8 @@
         "content": { "type": "string" },
         "imageUrl": { "type": "string" },
         "category": { "type": "string", "enum": ["berita", "pengumuman", "informasi"] },
+        "pdfUrl": { "type": "string" },
+        "pdfName": { "type": "string" },
         "authorId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
@@ -22,9 +24,28 @@
       "properties": {
         "title": { "type": "string" },
         "imageUrl": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "albumId": { "type": "string" },
+        "facebookId": { "type": "string" },
+        "source": { "type": "string" }
       },
       "required": ["title", "imageUrl", "createdAt"]
+    },
+    "GalleryAlbum": {
+      "title": "Gallery Album",
+      "description": "Albums for grouping images in the gallery.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "photoCount": { "type": "integer" },
+        "facebookId": { "type": "string" },
+        "source": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
     },
     "Teacher": {
       "title": "Teacher",
@@ -169,6 +190,10 @@
     "/gallery/{itemId}": {
       "schema": "GalleryItem",
       "description": "Gallery items"
+    },
+    "/gallery_albums/{albumId}": {
+      "schema": "GalleryAlbum",
+      "description": "Gallery photo albums"
     },
     "/teachers/{teacherId}": {
       "schema": "Teacher",

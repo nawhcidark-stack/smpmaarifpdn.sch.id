@@ -18,7 +18,9 @@ export default function Navbar() {
   const { isAdmin } = useAuth();
   const [settings, setSettings] = useState({
     schoolName: 'SMP Maarif NU Pandaan',
-    tagline: 'Unggul, Berakhlak, dan Berprestasi'
+    tagline: 'Unggul, Berakhlak, dan Berprestasi',
+    logo1Url: 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500',
+    logo2Url: 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'
   });
 
   useEffect(() => {
@@ -74,13 +76,13 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-4">
             <div className="flex gap-3 md:gap-4 items-center">
               <img 
-                src="https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500" 
+                src={settings.logo1Url || 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500'} 
                 alt="Logo NU" 
                 className="h-10 md:h-14 w-auto object-contain transition-all hover:scale-105 duration-500"
                 referrerPolicy="no-referrer"
               />
               <img 
-                src="https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500" 
+                src={settings.logo2Url || 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'} 
                 alt="Logo Sekolah" 
                 className="h-10 md:h-14 w-auto object-contain transition-all hover:scale-105 duration-500"
                 referrerPolicy="no-referrer"

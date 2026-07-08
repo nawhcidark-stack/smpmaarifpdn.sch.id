@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, FileText } from 'lucide-react';
 
 export default function News() {
   const [articles, setArticles] = useState<any[]>([]);
@@ -79,6 +79,13 @@ export default function News() {
                       {article.category}
                     </span>
                   </div>
+                  {article.pdfUrl && (
+                    <div className="absolute top-4 right-4" title="Memiliki Lampiran PDF">
+                      <span className="bg-white/95 backdrop-blur text-slate-800 text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded shadow-lg flex items-center gap-1.5 border border-slate-100">
+                        <FileText size={12} className="text-emerald-700" /> PDF
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-8 flex flex-col flex-grow gap-4">
                   <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
