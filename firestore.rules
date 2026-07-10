@@ -30,9 +30,9 @@ service cloud.firestore {
     function isValidArticle(data) {
       return data.title is string && data.title.size() <= 200
           && data.content is string && data.content.size() <= 50000
-          && data.imageUrl is string
+          && data.imageUrl is string && data.imageUrl.size() <= 2000000
           && data.category in ['berita', 'pengumuman', 'informasi']
-          && (!('pdfUrl' in data) || (data.pdfUrl is string && data.pdfUrl.size() <= 2000))
+          && (!('pdfUrl' in data) || (data.pdfUrl is string && data.pdfUrl.size() <= 2000000))
           && (!('pdfName' in data) || (data.pdfName is string && data.pdfName.size() <= 300))
           && (data.authorId == request.auth.uid || isAdmin())
           && data.createdAt is timestamp
