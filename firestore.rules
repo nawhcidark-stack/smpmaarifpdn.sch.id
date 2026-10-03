@@ -12,7 +12,12 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email in ['nawhci.dark@gmail.com', 'smpmaarifpandaan@gmail.com'];
+      return isSignedIn() && request.auth.token.email in [
+        'nawhci.dark@gmail.com',
+        'smpmaarifpandaan@gmail.com',
+        'admin@smpmaarifpandaan.sch.id',
+        'admin@maarifnu-pandaan.sch.id'
+      ];
     }
 
     function isValidId(id) {

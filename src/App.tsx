@@ -31,6 +31,13 @@ import AdminAchievements from './pages/admin/Achievements';
 import AdminSchoolProfile from './pages/admin/SchoolProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 
+export const ADMIN_EMAILS = [
+  'nawhci.dark@gmail.com',
+  'smpmaarifpandaan@gmail.com',
+  'admin@smpmaarifpandaan.sch.id',
+  'admin@maarifnu-pandaan.sch.id'
+];
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -49,8 +56,8 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      const adminEmails = ['nawhci.dark@gmail.com', 'smpmaarifpandaan@gmail.com'];
-      setIsAdmin(!!user?.email && adminEmails.includes(user.email));
+      const userEmail = user?.email?.toLowerCase().trim();
+      setIsAdmin(!!userEmail && ADMIN_EMAILS.includes(userEmail));
       setLoading(false);
     });
 
