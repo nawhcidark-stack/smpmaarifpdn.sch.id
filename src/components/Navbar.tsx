@@ -1,11 +1,12 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Menu, X, Settings } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '../App';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import AdminShortcutModal from './AdminShortcutModal';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -15,7 +16,11 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastClickTimeRef = useRef<number>(0);
   const [settings, setSettings] = useState({
     schoolName: 'SMP Maarif NU Pandaan',
     tagline: 'Unggul, Berakhlak, dan Berprestasi',
@@ -39,6 +44,49 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    const now = Date.now();
+    const diff = now - lastClickTimeRef.current;
+
+    // Detect fast double click within 350ms
+    if (diff > 0 && diff < 350) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      lastClickTimeRef.current = 0;
+      setShowAdminModal(true);
+    } else {
+      // First click: hold briefly for potential second click
+      lastClickTimeRef.current = now;
+      e.preventDefault();
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+        if (location.pathname !== '/') {
+          navigate('/');
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 260);
+    }
+  };
+
+  const handleLogoDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    lastClickTimeRef.current = 0;
+    setShowAdminModal(true);
+  };
 
   const navLinks = [
     { name: 'Beranda', path: '/' },
@@ -72,27 +120,41 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between">
-          {/* Logo Section */}
-          <Link to="/" className="flex items-center gap-4">
+          {/* Logo Section with 2x Quick Click Shortcut */}
+          <div 
+            onClick={handleLogoClick}
+            onDoubleClick={handleLogoDoubleClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (location.pathname !== '/') navigate('/');
+              }
+            }}
+            className="flex items-center gap-4 cursor-pointer select-none group"
+            title="Klik 1x ke Beranda • Klik cepat 2x untuk Shortcut Akses Admin"
+          >
             <div className="flex gap-3 md:gap-4 items-center">
               <img 
                 src={settings.logo1Url || 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500'} 
                 alt="Logo NU" 
-                className="h-10 md:h-14 w-auto object-contain transition-all hover:scale-105 duration-500"
+                className="h-10 md:h-14 w-auto object-contain transition-all group-hover:scale-105 duration-300"
                 referrerPolicy="no-referrer"
               />
               <img 
                 src={settings.logo2Url || 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'} 
                 alt="Logo Sekolah" 
-                className="h-10 md:h-14 w-auto object-contain transition-all hover:scale-105 duration-500"
+                className="h-10 md:h-14 w-auto object-contain transition-all group-hover:scale-105 duration-300"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold text-slate-800 leading-tight uppercase tracking-tight">{settings.schoolName}</h1>
+              <h1 className="text-xl font-bold text-slate-800 leading-tight uppercase tracking-tight group-hover:text-emerald-700 transition-colors">
+                {settings.schoolName}
+              </h1>
               <p className="text-[10px] text-slate-500 tracking-widest uppercase font-semibold">{settings.tagline}</p>
             </div>
-          </Link>
+          </div>
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-6">
@@ -204,6 +266,12 @@ export default function Navbar() {
           </div>
         )}
       </div>
+      {/* Admin Shortcut Modal triggered by 2x quick click on logo */}
+      <AdminShortcutModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        schoolName={settings.schoolName}
+      />
     </nav>
   );
 }

@@ -6,5 +6,7 @@
   "firestoreDatabaseId": "ai-studio-531f9b44-c588-4338-85c4-0d3b9539719c",
   "storageBucket": "sisfo-sparifda.firebasestorage.app",
   "messagingSenderId": "893744173338",
-  "measurementId": ""
+  "measurementId": "",
+  "oAuthClientId": "893744173338-hpttaj32ll702dspugibb53sktkndo39.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

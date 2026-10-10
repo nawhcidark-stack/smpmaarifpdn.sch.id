@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube, MessageCircle } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import AdminShortcutModal from './AdminShortcutModal';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const lastClickTimeRef = useRef<number>(0);
   const [settings, setSettings] = useState({
     schoolName: 'SMP Maarif NU Pandaan',
     tagline: 'Unggul, Berakhlak, dan Berprestasi',
@@ -35,23 +38,40 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
           {/* Brand Section (col-5) */}
           <div className="md:col-span-5 space-y-8">
-            <div className="flex items-center gap-6">
+            <div 
+              onClick={(e) => {
+                const now = Date.now();
+                if (now - lastClickTimeRef.current < 400) {
+                  e.preventDefault();
+                  setShowAdminModal(true);
+                  lastClickTimeRef.current = 0;
+                } else {
+                  lastClickTimeRef.current = now;
+                }
+              }}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                setShowAdminModal(true);
+              }}
+              className="flex items-center gap-6 cursor-pointer select-none group inline-flex"
+              title="Klik cepat 2x untuk Shortcut Akses Admin"
+            >
                <div className="flex gap-4 items-center">
                  <img 
                    src={settings.logo1Url || 'https://drive.google.com/thumbnail?id=1KN1QnEPAmFVlxzDGvFO9Y1BsNx4TLGVJ&sz=w500'} 
                    alt="Logo NU" 
-                   className="h-12 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-all"
+                   className="h-12 w-auto object-contain brightness-0 invert opacity-70 group-hover:opacity-100 transition-all group-hover:scale-105 duration-300"
                    referrerPolicy="no-referrer"
                  />
                  <img 
                    src={settings.logo2Url || 'https://drive.google.com/thumbnail?id=1TapOEksA-W--GGSmN_e18hFTYE4YYTPU&sz=w500'} 
                    alt="Logo Sekolah" 
-                   className="h-12 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-all"
+                   className="h-12 w-auto object-contain brightness-0 invert opacity-70 group-hover:opacity-100 transition-all group-hover:scale-105 duration-300"
                    referrerPolicy="no-referrer"
                  />
                </div>
                <div>
-                 <h2 className="text-xl font-black text-white tracking-tight uppercase">{settings.schoolName}</h2>
+                 <h2 className="text-xl font-black text-white tracking-tight uppercase group-hover:text-emerald-400 transition-colors">{settings.schoolName}</h2>
                  <p className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase mt-0.5">{settings.tagline}</p>
                </div>
             </div>
@@ -133,6 +153,11 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      <AdminShortcutModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        schoolName={settings.schoolName}
+      />
     </footer>
   );
 }
